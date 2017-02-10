@@ -15,7 +15,7 @@ random.seed(47)
 # App constants.
 WIDTH = 1100
 HEIGHT = 700
-OFFSET = 5
+OFFSET = 3
 NUM_CELLS = 24
 
 
