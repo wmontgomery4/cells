@@ -19,7 +19,7 @@ RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
 
 # Energy constants.
-COST_FORCE_RATIO = 1e-2
+ENERGY_FORCE_RATIO = 1e-4
 
 class Genome():
     """ Container class for cell genomes. """
@@ -69,14 +69,15 @@ class Cell():
     def step(self):
         """ Apply new force and spend energy. """
         # TODO: More complex thinking.
+        r = self.genes.radius
         x, y = 0,0
-        x += random.gauss(0, 1)
-        y += random.gauss(0, 1)
+        x += random.gauss(0, r)
+        y += random.gauss(0, r)
         self.force = x, y
 
         # Pay penalty.
         self.body.apply_force_at_local_point((x,y), point=(0,0))
-        cost = COST_FORCE_RATIO * (x**2 + y**2)
+        cost = ENERGY_FORCE_RATIO * (x**2 + y**2)
         self.energy = max(0, self.energy - cost)
         self.set_shape_color()
         print self.energy, cost

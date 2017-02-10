@@ -9,6 +9,7 @@ import pymunk as pm
 import pymunk.pyglet_util as util
 from cell import Cell
 
+import math
 import random
 random.seed(47)
 
@@ -69,10 +70,11 @@ class Main(pyglet.window.Window):
         new_cells = []
         for cell in self.cells:
             cell.step()
-            if cell.energy > 0:
-                new_cells.append(cell)
-            else:
+            prob_of_death = math.exp(-cell.energy)
+            if random.random() < prob_of_death:
                 self.space.remove(cell.body, cell.shape)
+            else:
+                new_cells.append(cell)
         self.cells = new_cells
 
         # Add more cells if we're below the minimum.
