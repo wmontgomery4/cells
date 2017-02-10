@@ -13,11 +13,15 @@ import random
 random.seed(47)
 
 # App constants.
-WIDTH = 1100
+FPS = 1/250.
+INTERVAL = 1/60.
+
+WIDTH = 1200
 HEIGHT = 700
 OFFSET = 3
-NUM_CELLS = 24
 
+MIN_CELLS = 24
+MAX_CELLS = 144
 
 class Main(pyglet.window.Window):
     def __init__(self):
@@ -27,12 +31,7 @@ class Main(pyglet.window.Window):
         self.set_caption('Cells')
         self.draw_options = util.DrawOptions()
 
-        # Initialize pymunk space and start updating app.
-        self.init_space()
-        pyglet.clock.schedule_interval(self.update, 1/60.0)
-        
-    def init_space(self):
-        """ Initialize pymunk physics space. """
+        # Initialize physics engine.
         self.space = pm.Space()
         self.space.sleep_time_threshold = 0.3
         
@@ -49,9 +48,36 @@ class Main(pyglet.window.Window):
             w.friction = 0.3
         self.space.add(self.walls)
 
-        # Create initial cells.
+        # Use main loop to populate initial cells.
         self.cells = []
-        for _ in range(NUM_CELLS):
+        self.cell_loop()
+
+        # Keep track of whether 'step' is scheduled.
+        self.running = False
+        self.toggle_run()
+
+    def run(self, T):
+        """ Called by pyglet.clock when self.running. """
+        t = 0
+        while t < T:
+            self.cell_loop()
+            self.space.step(FPS)
+            t += FPS
+
+    def cell_loop(self):
+        """ Loop through the cells, taking actions, adding/removing. """
+        new_cells = []
+        for cell in self.cells:
+            cell.step()
+            if cell.energy > 0:
+                new_cells.append(cell)
+            else:
+                self.space.remove(cell.body, cell.shape)
+        self.cells = new_cells
+
+        # Add more cells if we're below the minimum.
+        num = MIN_CELLS - len(self.cells)
+        for _ in range(num):
             self.add_cell()
 
     def add_cell(self, position=None, genes=None):
@@ -69,18 +95,18 @@ class Main(pyglet.window.Window):
         self.space.add(cell.body, cell.shape)
         self.cells.append(cell)
 
-    def update(self, T):
-        dt = 1/250.
-        t = 0
-        while t < T:
-            t += dt
-            self.space.step(dt)
-            for cell in self.cells:
-                cell.loop()
+    def toggle_run(self):
+        if self.running:
+            pyglet.clock.unschedule(self.run)
+        else:
+            pyglet.clock.schedule_interval(self.run, INTERVAL)
+        self.running = not self.running
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             pyglet.app.exit()
+        elif symbol == key.SPACE:
+            self.toggle_run()
 
     def on_draw(self):
         self.clear()
