@@ -9,15 +9,17 @@ import random
 random.seed(47)
 
 # Physics constants.
-DENSITY = 0.1
+DENSITY = 0.01
 FRICTION = 0.3
-CONTROL_LIMIT = 5000
 
 # Gene definitions and ranges.
 GENES = ['radius', 'color']
 RADIUS_MIN = 5.
 RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
+
+# Energy constants.
+COST_FORCE_RATIO = 1e-5
 
 class Genome():
     """ Container class for cell genomes. """
@@ -52,25 +54,30 @@ class Cell():
         self.shape.friction = FRICTION
         self.set_shape_color
 
-        # Initialize the control.
+        # Initialize the force and energy.
         self.force = (0, 0)
+        self.energy = r**2
 
-    def set_shape_color(self, color=None):
-        if color is None:
-            r, g, b = self.genes.rgb
-            color = (r*255, g*255, b*255)
-        self.shape.color = color
+    def set_shape_color(self):
+        """ Set self.shape based on self.genes.rgb and self.energy. """
+        radius = self.genes.radius
+        r, g, b = self.genes.rgb
+        mult = 255 * (self.energy / radius**2)
+        self.shape.color = (r*mult, g*mult, b*mult)
 
     def loop(self):
         """ Perform one loop. """
-        # Update color based on current energy.
-        self.set_shape_color()
-
-        # Implement OU process for now (not sure if actually correct).
+        # Compute new force.
+        # NOTE: Using OU process for now (not sure if actually correct).
         x, y = self.force
-        x += random.gauss(0, 0.5*CONTROL_LIMIT)
-        x = min(CONTROL_LIMIT, max(-CONTROL_LIMIT, x))
-        y += random.gauss(0, 0.5*CONTROL_LIMIT)
-        y = min(CONTROL_LIMIT, max(-CONTROL_LIMIT, x))
+        x += random.gauss(0, 1)
+        y += random.gauss(0, 1)
         self.force = x, y
+
+        # Apply force and update energy.
         self.body.apply_force_at_local_point(self.force, point=(0,0))
+        self.energy -= COST_FORCE_RATIO * (x**2 + y**2)
+        self.energy = max(0, self.energy)
+
+        # Update color for new energy.
+        self.set_shape_color()
