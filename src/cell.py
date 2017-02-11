@@ -3,14 +3,14 @@ Class for cell type.
 """
 
 import pymunk as pm
-
-import math
 import random
-random.seed(47)
+
+import collision
 
 # Physics constants.
 DENSITY = 1e-4
 FRICTION = 0.3
+ENERGY_FORCE_RATIO = 1e-4
 
 # Gene definitions and ranges.
 GENES = ['radius', 'color']
@@ -18,8 +18,6 @@ RADIUS_MIN = 5.
 RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
 
-# Energy constants.
-ENERGY_FORCE_RATIO = 1e-4
 
 class Genome():
     """ Container class for cell genomes. """
@@ -52,18 +50,18 @@ class Cell():
         # Initialize shape.
         self.shape = pm.Circle(self.body, r, (0,0))
         self.shape.friction = FRICTION
-        self.set_shape_color
+        self.shape.collision_type = collision.CELL
 
         # Initialize life.
         self.force = (0, 0)
         self.energy = r**2
+        self.max_energy = r**2
         self.set_shape_color()
 
     def set_shape_color(self):
         """ Set self.shape based on self.genes.rgb and self.energy. """
-        radius = self.genes.radius
         r, g, b = self.genes.rgb
-        mult = 255 * (self.energy / radius**2)
+        mult = 255 * self.energy / self.max_energy
         self.shape.color = (r*mult, g*mult, b*mult)
 
     def step(self):
@@ -80,4 +78,3 @@ class Cell():
         cost = ENERGY_FORCE_RATIO * (x**2 + y**2)
         self.energy = max(0, self.energy - cost)
         self.set_shape_color()
-        print self.energy, cost
