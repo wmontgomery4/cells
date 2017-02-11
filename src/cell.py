@@ -16,9 +16,12 @@ ENERGY_FORCE_RATIO = 1e-4
 
 # Gene definitions and ranges.
 GENES = ['radius', 'color']
-RADIUS_MIN = 5.
+RADIUS_MIN = 10.
 RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
+
+# Parameter for probability of killing another cell.
+KILL_ALPHA = 5
 
 
 class Genome():
@@ -84,6 +87,18 @@ class Cell():
         x += random.gauss(0, r)
         y += random.gauss(0, r)
         self.force = x, y
+
+    def attack(self, other):
+        """ Attack another cell. """
+        # Compute the probability of succeeding.
+        ratio = other.body.mass / self.body.mass
+        prob_success = math.exp(-KILL_ALPHA*ratio)
+        if random.random() < prob_success:
+            # Take energy from the other cell.
+            other.die()
+            self.energy += other.energy
+            self.energy = min(self.energy, self.max_energy)
+            self.update_shape_color()
 
     def loop(self):
         """ Main loop for cells. """

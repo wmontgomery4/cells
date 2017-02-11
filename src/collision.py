@@ -12,20 +12,10 @@ FOOD = 2
 
 def cell_cell_begin(arbiter, space, data):
     """ Collision handler for cell/cell beginning contact. """
-    print "Begin: {}".format(arbiter.shapes)
-
-    # Get the shapes and determine the winner.
     big, small = [s.cell for s in arbiter.shapes]
     if big.body.mass < small.body.mass:
         small, big = big, small
-
-    # Play out a battle.
-    # TODO: move this logic to cell.attack() later.
-    small.die()
-    big.energy += small.energy
-    big.energy = min(big.energy, big.max_energy)
-    big.update_shape_color()
-    print "{} eats {}".format(big, small)
+    big.attack(small)
     return True
 
 def cell_cell_post_solve(arbiter, space, data):
