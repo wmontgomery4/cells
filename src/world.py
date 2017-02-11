@@ -29,8 +29,8 @@ class World():
         # Collision handling.
         self.cell_handler = self.space.add_collision_handler(1,1)
         self.cell_handler.begin = collision.cell_cell_begin
-        self.cell_handler.post_solve = collision.cell_cell_post_solve
-        self.cell_handler.separate = collision.cell_cell_separate
+#        self.cell_handler.post_solve = collision.cell_cell_post_solve
+#        self.cell_handler.separate = collision.cell_cell_separate
         
         # Create walls around arena.
         bl = (offset, offset)

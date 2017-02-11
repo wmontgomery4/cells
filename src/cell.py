@@ -54,18 +54,27 @@ class Cell():
         self.shape.friction = FRICTION
         self.shape.collision_type = collision.CELL
 
+        # Store reference to cell in shape for collisons.
+        # TODO: This feels hacky, sign of bad design?
+        self.shape.cell = self
+
         # Initialize life.
         self.alive = True
         self.force = (0, 0)
         self.energy = r**2
         self.max_energy = r**2
-        self.set_shape_color()
+        self.update_shape_color()
 
-    def set_shape_color(self):
+    def update_shape_color(self):
         """ Set self.shape based on self.genes.rgb and self.energy. """
         r, g, b = self.genes.rgb
         mult = 255 * self.energy / self.max_energy
         self.shape.color = (r*mult, g*mult, b*mult)
+
+    def die(self):
+        """ Remove self from space. """
+        self.body.space.remove(self.body, self.shape)
+        self.alive = False
 
     def think(self):
         """ Choose a new action. """
@@ -84,16 +93,8 @@ class Cell():
         x, y = self.force
         self.body.apply_force_at_local_point((x,y), point=(0,0))
         # Pay penalty.
-        cost = ENERGY_FORCE_RATIO * (x**2 + y**2)
-        self.energy = max(0, self.energy - cost)
-        # Flip life or death coin.
-        prob_of_death = math.exp(-self.energy)
-        if random.random() < prob_of_death:
+        self.energy -= ENERGY_FORCE_RATIO * (x**2 + y**2)
+        if self.energy <= 0:
             self.die()
         else:
-            self.set_shape_color()
-
-    def die(self):
-        """ Remove self from space. """
-        self.body.space.remove(self.body, self.shape)
-        self.alive = False
+            self.update_shape_color()
