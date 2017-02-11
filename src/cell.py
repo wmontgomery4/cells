@@ -3,6 +3,8 @@ Class for cell type.
 """
 
 import pymunk as pm
+
+import math
 import random
 
 import collision
@@ -53,6 +55,7 @@ class Cell():
         self.shape.collision_type = collision.CELL
 
         # Initialize life.
+        self.alive = True
         self.force = (0, 0)
         self.energy = r**2
         self.max_energy = r**2
@@ -64,8 +67,8 @@ class Cell():
         mult = 255 * self.energy / self.max_energy
         self.shape.color = (r*mult, g*mult, b*mult)
 
-    def step(self):
-        """ Apply new force and spend energy. """
+    def think(self):
+        """ Choose a new action. """
         # TODO: More complex thinking.
         r = self.genes.radius
         x, y = 0,0
@@ -73,8 +76,24 @@ class Cell():
         y += random.gauss(0, r)
         self.force = x, y
 
-        # Pay penalty.
+    def loop(self):
+        """ Main loop for cells. """
+        # Choose new action.
+        self.think()
+        # Apply force.
+        x, y = self.force
         self.body.apply_force_at_local_point((x,y), point=(0,0))
+        # Pay penalty.
         cost = ENERGY_FORCE_RATIO * (x**2 + y**2)
         self.energy = max(0, self.energy - cost)
-        self.set_shape_color()
+        # Flip life or death coin.
+        prob_of_death = math.exp(-self.energy)
+        if random.random() < prob_of_death:
+            self.die()
+        else:
+            self.set_shape_color()
+
+    def die(self):
+        """ Remove self from space. """
+        self.body.space.remove(self.body, self.shape)
+        self.alive = False

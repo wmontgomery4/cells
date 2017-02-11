@@ -5,12 +5,11 @@ Handle everything related to the world.
 import pymunk as pm
 from pymunk.pyglet_util import DrawOptions
 
-import collision
-from cell import *
-
 import math
 import random
-random.seed(47)
+
+import collision
+from cell import *
 
 
 class World():
@@ -30,6 +29,8 @@ class World():
         # Collision handling.
         self.cell_handler = self.space.add_collision_handler(1,1)
         self.cell_handler.begin = collision.cell_cell_begin
+        self.cell_handler.post_solve = collision.cell_cell_post_solve
+        self.cell_handler.separate = collision.cell_cell_separate
         
         # Create walls around arena.
         bl = (offset, offset)
@@ -52,11 +53,13 @@ class World():
         """ Loop through the cells, taking actions, adding/removing. """
         new_cells = []
         for cell in self.cells:
-            cell.step()
-            prob_of_death = math.exp(-cell.energy)
-            if random.random() < prob_of_death:
-                self.space.remove(cell.body, cell.shape)
-            else:
+            # Remove cells that died between calls (to allow for GC).
+            if not cell.alive:
+                continue
+            # Take a step with the cell.
+            cell.loop()
+            # Filter out cells that died in their loop.
+            if cell.alive:
                 new_cells.append(cell)
         self.cells = new_cells
 
