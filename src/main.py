@@ -20,10 +20,6 @@ INTERVAL = 1/60. # For pyglet.clock.
 
 WIDTH = 1200
 HEIGHT = 700
-OFFSET = 3
-
-MIN_CELLS = 24
-MAX_CELLS = 144
 
 
 class Main(pyglet.window.Window):
@@ -34,7 +30,7 @@ class Main(pyglet.window.Window):
         self.set_caption('Cells')
 
         # Initialize world.
-        self.world = World(MIN_CELLS, MAX_CELLS, WIDTH, HEIGHT, OFFSET)
+        self.world = World(WIDTH, HEIGHT)
 
         # Keep track of whether 'run' is scheduled.
         self.running = False

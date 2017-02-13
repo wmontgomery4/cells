@@ -88,6 +88,13 @@ class Cell():
         y += random.gauss(0, r)
         self.force = x, y
 
+    def eat(self, food):
+        """ Eat a food particle. """
+        food.remove()
+        self.energy += food.energy
+        self.energy = min(self.energy, self.max_energy)
+        self.update_shape_color()
+
     def attack(self, other):
         """ Attack another cell. """
         # Compute the probability of succeeding.

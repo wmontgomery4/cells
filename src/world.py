@@ -8,18 +8,23 @@ from pymunk.pyglet_util import DrawOptions
 import math
 import random
 
+from cell import Cell
+from food import Food
+
 import collision
-from cell import *
+from collision import CELL, FOOD
+
+OFFSET = 3
+MIN_CELLS = 24
+MAX_CELLS = 144
+FOOD_SPAWN_PROB = 0.05
 
 
 class World():
-    def __init__(self, min_cells, max_cells, width, height, offset):
+    def __init__(self, width, height):
         """ Create new world and initialize. """
-        self.min_cells = min_cells
-        self.max_cells = max_cells
         self.width = width
         self.height = height
-        self.offset = offset
 
         # Initialize physics engine.
         self.space = pm.Space()
@@ -27,16 +32,19 @@ class World():
         self.draw_options = DrawOptions()
 
         # Collision handling.
-        self.cell_handler = self.space.add_collision_handler(1,1)
-        self.cell_handler.begin = collision.cell_cell_begin
-#        self.cell_handler.post_solve = collision.cell_cell_post_solve
-#        self.cell_handler.separate = collision.cell_cell_separate
+        self.cc_handler = self.space.add_collision_handler(
+                collision.CELL, collision.CELL)
+        self.cc_handler.begin = collision.cell_cell_begin
+
+        self.cf_handler = self.space.add_collision_handler(
+                collision.CELL, collision.FOOD)
+        self.cf_handler.begin = collision.cell_food_begin
         
         # Create walls around arena.
-        bl = (offset, offset)
-        tl = (offset, height-offset)
-        br = (width-offset, offset)
-        tr = (width-offset, height-offset)
+        bl = (OFFSET, OFFSET)
+        tl = (OFFSET, height-OFFSET)
+        br = (width-OFFSET, OFFSET)
+        tr = (width-OFFSET, height-OFFSET)
         self.walls = [pm.Segment(self.space.static_body, bl, br, 1),
                 pm.Segment(self.space.static_body, br, tr, 1),
                 pm.Segment(self.space.static_body, tr, tl, 1),
@@ -47,9 +55,9 @@ class World():
 
         # Use main loop to populate initial cells.
         self.cells = []
-        self.cell_loop()
+        self.main_loop()
 
-    def cell_loop(self):
+    def main_loop(self):
         """ Loop through the cells, taking actions, adding/removing. """
         new_cells = []
         for cell in self.cells:
@@ -64,29 +72,45 @@ class World():
         self.cells = new_cells
 
         # Add more cells if we're below the minimum.
-        num = self.min_cells - len(self.cells)
+        num = MIN_CELLS - len(self.cells)
         for _ in range(num):
             self.add_cell()
+
+        # Add more food.
+        if random.random() < FOOD_SPAWN_PROB:
+            self.add_food()
 
     def add_cell(self, position=None, genes=None):
         """ Add a cell to the space at 'position' with 'genes'. """
         cell = Cell(genes)
         if position is None:
             # Random position within arena.
-            r = cell.genes.radius
-            x = random.uniform(self.offset+r, self.width-self.offset-r)
-            y = random.uniform(self.offset+r, self.height-self.offset-r)
+            r = cell.shape.radius
+            x = random.uniform(OFFSET+r, self.width-OFFSET-r)
+            y = random.uniform(OFFSET+r, self.height-OFFSET-r)
             position = (x,y)
         cell.body.position = position
         self.space.add(cell.body, cell.shape)
         self.cells.append(cell)
+
+    def add_food(self, position=None):
+        """ Add a cell to the space at 'position' with 'genes'. """
+        food = Food()
+        if position is None:
+            # Random position within arena.
+            r = food.shape.radius
+            x = random.uniform(OFFSET+r, self.width-OFFSET-r)
+            y = random.uniform(OFFSET+r, self.height-OFFSET-r)
+            position = (x,y)
+        food.body.position = position
+        self.space.add(food.body, food.shape)
 
     def run(self, T):
         """ Run the world for 'T' time at 'dt' resolution. """
         t = 0
         dt = 1/250. # Magic number.
         while t < T:
-            self.cell_loop()
+            self.main_loop()
             self.space.step(dt)
             t += dt
 
