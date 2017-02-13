@@ -23,9 +23,6 @@ RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
 MUTATION_RATE = 0.1
 
-# Parameter for probability of killing another cell.
-KILL_ALPHA = 5
-
 
 class Genome():
     """ Container class for cell genomes. """
@@ -37,10 +34,10 @@ class Genome():
         N = self.r + self.g + self.b
         self.rgb = (self.r/N, self.g/N, self.b/N)
 
-    def mutate(self, rate=0.1):
+    def mutate(self, rate=MUTATION_RATE):
         """ Randomize each gene with probability 'rate'. """
         # Add gaussian noise to radius.
-        self.radius += radius*rate*random.gauss()
+        self.radius += random.gauss(0,self.radius*rate)
         self.radius = min(RADIUS_MAX, max(RADIUS_MIN, self.radius))
 
         # Dirichlet distribution for color.
@@ -78,20 +75,26 @@ class Cell():
         self.shape.cell = self
 
         # Initialize life.
+        self.time = time.time()
         self.alive = True
         self.force = (0, 0)
-        self.energy = r**2
+        self.energy = 0
         self.max_energy = 2*r**2
-        self.update_shape_color()
-        self.time = time.time()
+        self.update_energy(r**2)
 
-    def update_shape_color(self):
-        """ Set self.shape based on self.genes.rgb and self.energy. """
-        # Set color proportional to energy and genes.
+    def update_energy(self, delta):
+        """ Add or consume energy. """
+        self.energy += delta
+        if self.energy <= 0:
+            self.die()
+            return
+        elif self.energy > self.max_energy:
+            self.energy = self.max_energy
+        # Set base color proportional to energy and genes.
         base = 0.5*self.max_energy
         mult = 255 * self.energy / base
         color = [mult*c for c in self.genes.rgb]
-        # Add extra energy equally.
+        # Add equally to RGB past the base energy.
         if self.energy > base:
             diff = self.energy - base
             add = 255 * diff / base
@@ -112,35 +115,14 @@ class Cell():
         y += random.gauss(0, r)
         self.force = x, y
 
-    def eat(self, food):
-        """ Eat a food particle. """
-        food.remove()
-        self.energy += food.energy
-        self.energy = min(self.energy, self.max_energy)
-        self.update_shape_color()
-
-    def attack(self, other):
-        """ Attack another cell. """
-        # Compute the probability of succeeding.
-        ratio = other.body.mass / self.body.mass
-        prob_success = math.exp(-KILL_ALPHA*ratio)
-        if random.random() < prob_success:
-            # Take energy from the other cell.
-            other.die()
-            self.energy += other.energy
-            self.energy = min(self.energy, self.max_energy)
-            self.update_shape_color()
-
     def split(self):
         """ Split into two cells. """
         # Create mutated copy of self.
         new_genes = copy.deepcopy(self.genes)
+        new_genes.mutate()
         new_cell = self.world.add_cell(self.body.position, new_genes)
-        new_cell.energy = self.energy / 2.0
-        new_cell.update_shape_color()
         # Pay penalty.
-        self.energy /= 2.0
-        self.update_shape_color()
+        self.update_energy(-new_cell.energy)
         return new_cell
 
     def loop(self):
@@ -151,8 +133,5 @@ class Cell():
         x, y = self.force
         self.body.apply_force_at_local_point((x,y), point=(0,0))
         # Pay penalty.
-        self.energy -= ENERGY_FORCE_RATIO * (x**2 + y**2)
-        if self.energy <= 0:
-            self.die()
-        else:
-            self.update_shape_color()
+        cost = -ENERGY_FORCE_RATIO * (x**2 + y**2)
+        self.update_energy(cost)

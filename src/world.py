@@ -15,7 +15,7 @@ import collision
 from collision import CELL, FOOD
 
 OFFSET = 3
-MIN_CELLS = 24
+MIN_CELLS = 12
 MAX_CELLS = 144
 FOOD_SPAWN_PROB = 0.05
 
@@ -66,11 +66,8 @@ class World():
                 continue
             # Split cells that have reached the energy limit.
             if cell.energy >= cell.max_energy:
-                print "SPLITTING {}".format(cell)
                 child = cell.split()
                 new_cells.append(child)
-                print "CELL ENERGY {}".format(cell.energy)
-                print "CHILD ENERGY {}".format(child.energy)
             # Take a step with the cell.
             cell.loop()
             # Filter out cells that died in their loop.
