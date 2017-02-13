@@ -64,6 +64,13 @@ class World():
             # Remove cells that died between calls (to allow for GC).
             if not cell.alive:
                 continue
+            # Split cells that have reached the energy limit.
+            if cell.energy >= cell.max_energy:
+                print "SPLITTING {}".format(cell)
+                child = cell.split()
+                new_cells.append(child)
+                print "CELL ENERGY {}".format(cell.energy)
+                print "CHILD ENERGY {}".format(child.energy)
             # Take a step with the cell.
             cell.loop()
             # Filter out cells that died in their loop.
@@ -73,8 +80,7 @@ class World():
 
         # Add more cells if we're below the minimum.
         num = MIN_CELLS - len(self.cells)
-        for _ in range(num):
-            self.add_cell()
+        self.cells += [self.add_cell() for _ in range(num)]
 
         # Add more food.
         if random.random() < FOOD_SPAWN_PROB:
@@ -82,7 +88,7 @@ class World():
 
     def add_cell(self, position=None, genes=None):
         """ Add a cell to the space at 'position' with 'genes'. """
-        cell = Cell(genes)
+        cell = Cell(self, genes)
         if position is None:
             # Random position within arena.
             r = cell.shape.radius
@@ -91,7 +97,7 @@ class World():
             position = (x,y)
         cell.body.position = position
         self.space.add(cell.body, cell.shape)
-        self.cells.append(cell)
+        return cell
 
     def add_food(self, position=None):
         """ Add a cell to the space at 'position' with 'genes'. """

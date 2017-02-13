@@ -4,7 +4,9 @@ Class for cell type.
 
 import pymunk as pm
 
+import copy
 import math
+import time
 import random
 
 import collision
@@ -19,6 +21,7 @@ GENES = ['radius', 'color']
 RADIUS_MIN = 10.
 RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
+MUTATION_RATE = 0.1
 
 # Parameter for probability of killing another cell.
 KILL_ALPHA = 5
@@ -27,21 +30,34 @@ KILL_ALPHA = 5
 class Genome():
     """ Container class for cell genomes. """
     def __init__(self):
-        # Uniform distribution for radius.
         self.radius = random.uniform(RADIUS_MIN, RADIUS_MAX)
+        self.r = random.gammavariate(COLOR_ALPHA, 1)
+        self.g = random.gammavariate(COLOR_ALPHA, 1)
+        self.b = random.gammavariate(COLOR_ALPHA, 1)
+        N = self.r + self.g + self.b
+        self.rgb = (self.r/N, self.g/N, self.b/N)
+
+    def mutate(self, rate=0.1):
+        """ Randomize each gene with probability 'rate'. """
+        # Add gaussian noise to radius.
+        self.radius += radius*rate*random.gauss()
+        self.radius = min(RADIUS_MAX, max(RADIUS_MIN, self.radius))
 
         # Dirichlet distribution for color.
-        r = random.gammavariate(COLOR_ALPHA, 1)
-        g = random.gammavariate(COLOR_ALPHA, 1)
-        b = random.gammavariate(COLOR_ALPHA, 1)
-        N = r + g + b
-        self.rgb = (r/N, g/N, b/N)
-
+        if random.random() < rate:
+            self.r = random.gammavariate(COLOR_ALPHA, 1)
+        if random.random() < rate:
+            self.g = random.gammavariate(COLOR_ALPHA, 1)
+        if random.random() < rate:
+            self.b = random.gammavariate(COLOR_ALPHA, 1)
+        N = self.r + self.g + self.b
+        self.rgb = (self.r/N, self.g/N, self.b/N)
 
 class Cell():
     """ Container class for cell automatons. """
-    def __init__(self, genes=None):
+    def __init__(self, world, genes=None):
         """ Initialize a Cell with 'genes', random if None given. """
+        self.world = world
         if genes is None:
             genes = Genome()
         self.genes = genes
@@ -65,14 +81,22 @@ class Cell():
         self.alive = True
         self.force = (0, 0)
         self.energy = r**2
-        self.max_energy = r**2
+        self.max_energy = 2*r**2
         self.update_shape_color()
+        self.time = time.time()
 
     def update_shape_color(self):
         """ Set self.shape based on self.genes.rgb and self.energy. """
-        r, g, b = self.genes.rgb
-        mult = 255 * self.energy / self.max_energy
-        self.shape.color = (r*mult, g*mult, b*mult)
+        # Set color proportional to energy and genes.
+        base = 0.5*self.max_energy
+        mult = 255 * self.energy / base
+        color = [mult*c for c in self.genes.rgb]
+        # Add extra energy equally.
+        if self.energy > base:
+            diff = self.energy - base
+            add = 255 * diff / base
+            color = [min(255, c + add) for c in color]
+        self.shape.color = color
 
     def die(self):
         """ Remove self from space. """
@@ -106,6 +130,18 @@ class Cell():
             self.energy += other.energy
             self.energy = min(self.energy, self.max_energy)
             self.update_shape_color()
+
+    def split(self):
+        """ Split into two cells. """
+        # Create mutated copy of self.
+        new_genes = copy.deepcopy(self.genes)
+        new_cell = self.world.add_cell(self.body.position, new_genes)
+        new_cell.energy = self.energy / 2.0
+        new_cell.update_shape_color()
+        # Pay penalty.
+        self.energy /= 2.0
+        self.update_shape_color()
+        return new_cell
 
     def loop(self):
         """ Main loop for cells. """

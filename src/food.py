@@ -11,9 +11,9 @@ import collision
 
 # Physics constants.
 RADIUS = 3
+ENERGY = 100
 DENSITY = 1e-4
 FRICTION = 0.3
-
 
 class Food():
     """ Container class for food bodies. """
@@ -32,7 +32,7 @@ class Food():
         self.shape.color = (255, 255, 255)
 
         self.eaten = False
-        self.energy = RADIUS**2
+        self.energy = ENERGY
 
         # Store reference to self in shape for collisons.
         # TODO: This feels hacky, sign of bad design?
