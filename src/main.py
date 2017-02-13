@@ -2,9 +2,9 @@
 Evolutionary cell simulation.
 """
 
+import sys
 import math
 import random
-random.seed(47)
 
 import pyglet
 from pyglet.gl import *
@@ -23,11 +23,12 @@ HEIGHT = 700
 
 
 class Main(pyglet.window.Window):
-    def __init__(self):
+    def __init__(self, seed=47):
         """ Initialize pyglet app. """
         pyglet.window.Window.__init__(self, vsync=False,
                 width=WIDTH, height=HEIGHT)
         self.set_caption('Cells')
+        random.seed(seed)
 
         # Initialize world.
         self.world = World(WIDTH, HEIGHT)
@@ -54,5 +55,8 @@ class Main(pyglet.window.Window):
         self.world.draw()
         
 if __name__ == '__main__':
-    main = Main()
+    if len(sys.argv) > 1:
+        main = Main(sys.argv[1])
+    else:
+        main = Main()
     pyglet.app.run()
