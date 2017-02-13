@@ -15,7 +15,7 @@ import collision
 from collision import CELL, FOOD
 
 OFFSET = 3
-MIN_CELLS = 12
+MIN_CELLS = 6
 MAX_CELLS = 144
 FOOD_SPAWN_PROB = 0.05
 

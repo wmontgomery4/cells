@@ -23,10 +23,13 @@ def cell_cell_begin(arbiter, space, data):
         print "TODO: Can't attack a dead thing."
     if strong.energy < weak.energy:
         weak, strong = strong, weak
-    # Compute the probability of failing.
+    # Compute the probability of succeeding.
     ratio = strong.energy / weak.energy
-    prob_failure = math.exp(-KILL_ALPHA*(ratio-1))
-    if random.random() > prob_failure:
+    prob_success = 1. - math.exp(-KILL_ALPHA*(ratio-1))
+    r, g, b = strong.genes.rgb
+    R, G, B = weak.genes.rgb
+    prob_success *= 1. - (r*R + g*G + b*B)
+    if random.random() < prob_success:
         # Take energy from the other cell.
         strong.update_energy(ENERGY_EFFICIENCY*weak.energy)
         weak.die()
