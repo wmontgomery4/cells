@@ -12,7 +12,6 @@ from cell import Cell
 from food import Food
 
 import collision
-from collision import CELL, FOOD
 
 OFFSET = 3
 MIN_CELLS = 6
@@ -51,6 +50,8 @@ class World():
                 pm.Segment(self.space.static_body, tl, bl, 1)]
         for w in self.walls:
             w.friction = 0.3
+            w.collision_type = collision.WALL
+            w.filter = pm.ShapeFilter(categories=collision.WALL)
         self.space.add(self.walls)
 
         # Use main loop to populate initial cells.

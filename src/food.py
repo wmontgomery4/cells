@@ -11,7 +11,7 @@ import collision
 
 # Physics constants.
 RADIUS = 3
-ENERGY = 50
+ENERGY = 25
 DENSITY = 1e-4
 FRICTION = 0.3
 
@@ -27,9 +27,10 @@ class Food():
 
         # Initialize shape.
         self.shape = pm.Circle(self.body, RADIUS, (0,0))
+        self.shape.color = (255, 255, 255)
         self.shape.friction = FRICTION
         self.shape.collision_type = collision.FOOD
-        self.shape.color = (255, 255, 255)
+        self.shape.filter = pm.ShapeFilter(categories=collision.FOOD)
 
         self.eaten = False
         self.energy = ENERGY

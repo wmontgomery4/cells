@@ -9,8 +9,9 @@ import math
 import random
 
 # Collision types.
-CELL = 1
-FOOD = 2
+WALL = 0b1
+CELL = 0b10
+FOOD = 0b100
 
 # Parameter for probability of killing another cell.
 KILL_ALPHA = 1

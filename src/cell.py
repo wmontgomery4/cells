@@ -22,17 +22,25 @@ RADIUS_MIN = 10.
 RADIUS_MAX = 50.
 COLOR_ALPHA = 0.8
 MUTATION_RATE = 0.1
-
+LOG_GAIN_MIN = -3.
+LOG_GAIN_MAX = -1.
 
 class Genome():
     """ Container class for cell genomes. """
     def __init__(self):
+        # Uniform for radius.
         self.radius = random.uniform(RADIUS_MIN, RADIUS_MAX)
+
+        # Dirichlet distribution for color.
         self.r = random.gammavariate(COLOR_ALPHA, 1)
         self.g = random.gammavariate(COLOR_ALPHA, 1)
         self.b = random.gammavariate(COLOR_ALPHA, 1)
         N = self.r + self.g + self.b
         self.rgb = (self.r/N, self.g/N, self.b/N)
+
+        # Log-Uniform for gain.
+        self.log_gain = random.uniform(LOG_GAIN_MIN, LOG_GAIN_MAX)
+        self.gain = math.exp(self.log_gain)
 
     def mutate(self, rate=MUTATION_RATE):
         """ Randomize each gene with probability 'rate'. """
@@ -40,7 +48,7 @@ class Genome():
         self.radius += random.gauss(0,self.radius*rate)
         self.radius = min(RADIUS_MAX, max(RADIUS_MIN, self.radius))
 
-        # Dirichlet distribution for color.
+        # Potentially draw new gammavariates.
         if random.random() < rate:
             self.r = random.gammavariate(COLOR_ALPHA, 1)
         if random.random() < rate:
@@ -49,6 +57,11 @@ class Genome():
             self.b = random.gammavariate(COLOR_ALPHA, 1)
         N = self.r + self.g + self.b
         self.rgb = (self.r/N, self.g/N, self.b/N)
+
+        # Add gaussian noise to gain.
+        self.log_gain += random.gauss(0, rate)
+        self.log_gain = min(LOG_GAIN_MAX, max(LOG_GAIN_MIN, self.radius))
+        self.gain = math.exp(self.log_gain)
 
 class Cell():
     """ Container class for cell automatons. """
@@ -69,6 +82,7 @@ class Cell():
         self.shape = pm.Circle(self.body, r, (0,0))
         self.shape.friction = FRICTION
         self.shape.collision_type = collision.CELL
+        self.shape.filter = pm.ShapeFilter(categories=collision.CELL)
 
         # Store reference to cell in shape for collisons.
         # TODO: This feels hacky, sign of bad design?
@@ -108,12 +122,27 @@ class Cell():
 
     def think(self):
         """ Choose a new action. """
-        # TODO: More complex thinking.
+        # Query for closest food.
+        # TODO: Add vision for nearest cells too.
         r = self.genes.radius
-        x, y = 0,0
-        x += random.gauss(0, r)
-        y += random.gauss(0, r)
-        self.force = x, y
+        pos = self.body.position
+        mask = pm.ShapeFilter.ALL_MASKS ^ (collision.CELL | collision.WALL)
+        info = self.world.space.point_query_nearest(pos, 3*r,
+                pm.ShapeFilter(mask=mask))
+
+        # Initialize force.
+        ux = random.gauss(0, r)
+        uy = random.gauss(0, r)
+        self.force = ux, uy
+
+        # No thinking without information (yet?)
+        if info is None:
+            return
+
+        # Apply gains.
+        K = self.genes.gain
+        delta = pos - info.point
+        self.force -= K*delta
 
     def split(self):
         """ Split into two cells. """
