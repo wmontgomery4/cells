@@ -4,6 +4,7 @@ Module for handling collisions.
 
 import pymunk as pm
 
+import time
 import math
 import random
 
@@ -15,15 +16,24 @@ FOOD = 2
 KILL_ALPHA = 1
 # How much energy you get from eating other cells.
 ENERGY_EFFICIENCY = 0.7
+# Ignore newborn cells for a short delay.
+NEWBORN_DELAY = 0.5
 
 def cell_cell_begin(arbiter, space, data):
     """ Collision handler for cell/cell beginning contact. """
     strong, weak = [s.cell for s in arbiter.shapes]
-    if not weak.alive:
-        print "TODO: Can't attack a dead thing."
+    # Make sure both cells are actually alive.
+    if not weak.alive or not strong.alive:
+        print "TODO: This shouldn't happen really"
+        return False
+    # Ignore newborn cells.
+    cutoff = time.time() - NEWBORN_DELAY
+    if weak.time > cutoff or strong.time > cutoff:
+        return True
+    # Sort to get actual weak/strong.
     if strong.energy < weak.energy:
         weak, strong = strong, weak
-    # Compute the probability of succeeding.
+    # Compute the probability of successful attack.
     ratio = strong.energy / weak.energy
     prob_success = 1. - math.exp(-KILL_ALPHA*(ratio-1))
     r, g, b = strong.genes.rgb
