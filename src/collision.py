@@ -16,7 +16,7 @@ FOOD = 0b100
 # Parameter for probability of killing another cell.
 KILL_ALPHA = 1
 # How much energy you get from eating other cells.
-ENERGY_EFFICIENCY = 0.7
+ENERGY_EFFICIENCY = 0.9
 # Ignore newborn cells for a short delay.
 NEWBORN_DELAY = 0.5
 

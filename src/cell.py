@@ -18,12 +18,12 @@ ENERGY_FORCE_RATIO = 1e-4
 
 # Gene definitions and ranges.
 GENES = ['radius', 'color']
-RADIUS_MIN = 10.
-RADIUS_MAX = 50.
+RADIUS_MIN = 5.
+RADIUS_MAX = 30.
 COLOR_ALPHA = 0.8
 MUTATION_RATE = 0.1
-LOG_GAIN_MIN = -3.
-LOG_GAIN_MAX = -1.
+LOG_GAIN_MIN = -5.
+LOG_GAIN_MAX = -3.
 
 class Genome():
     """ Container class for cell genomes. """
@@ -127,12 +127,12 @@ class Cell():
         r = self.genes.radius
         pos = self.body.position
         mask = pm.ShapeFilter.ALL_MASKS ^ (collision.CELL | collision.WALL)
-        info = self.world.space.point_query_nearest(pos, 3*r,
+        info = self.world.space.point_query_nearest(pos, 12*r,
                 pm.ShapeFilter(mask=mask))
 
         # Initialize force.
-        ux = random.gauss(0, r)
-        uy = random.gauss(0, r)
+        ux = 0
+        uy = 0
         self.force = ux, uy
 
         # No thinking without information (yet?)

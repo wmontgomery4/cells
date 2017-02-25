@@ -11,7 +11,7 @@ import collision
 
 # Physics constants.
 RADIUS = 3
-ENERGY = 25
+ENERGY = 15
 DENSITY = 1e-4
 FRICTION = 0.3
 
