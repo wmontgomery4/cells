@@ -25,7 +25,7 @@ def cell_cell_begin(arbiter, space, data):
     strong, weak = [s.cell for s in arbiter.shapes]
     # Make sure both cells are actually alive.
     if not weak.alive or not strong.alive:
-        print "TODO: This shouldn't happen really"
+        print("TODO: This shouldn't happen really")
         return False
     # Ignore newborn cells.
     cutoff = time.time() - NEWBORN_DELAY

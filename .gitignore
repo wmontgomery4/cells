@@ -1,5 +1,5 @@
 # Python
-src/*.pyc
+src/__pycache__
 
 # Vim
 **.swp
